@@ -22,8 +22,12 @@ import json
 
 train_audio_path = 'C:/tmp/speech_dataset/'
 
-target_list = ['backward', 'yes', 'no', 'on', 'off','up', 'down', 'stop', 'go', 'right', 'forward','left']
+target_list = ['backward', 'yes', 'no', 'on', 'off']
 skip_list = ['tree', 'one', 'bed', 'eight', 'three', 'two','up', 'down', 'stop', 'go', 'left', 'right', 'bird', 'cat', 'dog', 'five', 'four', 'seven', 'sheila', 'six', 'follow', 'visual', 'zero', 'marvin', 'nine', 'wow', 'happy', 'forward', 'learn', 'house']
+
+#target_list = ['backward', 'yes', 'no', 'on', 'off','up', 'down', 'stop', 'go', 'right', 'forward','left']
+#skip_list = ['tree', 'one', 'bed', 'eight', 'three', 'two', 'bird', 'cat', 'dog', 'five', 'four', 'seven', 'sheila', 'six', 'follow', 'visual', 'zero', 'marvin', 'nine', 'wow', 'happy', 'learn', 'house']
+
 
 folders = next(os.walk(train_audio_path))[1] # 0=se stesso, 1=subfolder primo livello ...
 folders = list(filter(lambda f: f not in skip_list, folders))

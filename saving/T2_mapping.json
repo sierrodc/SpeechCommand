@@ -1,1 +1,1 @@
-{"_unknown_": 0, "backward": 1, "no": 2, "off": 3, "on": 4, "yes": 5}
+{"_unknown_": 0, "backward": 1, "down": 2, "forward": 3, "go": 4, "left": 5, "no": 6, "off": 7, "on": 8, "right": 9, "stop": 10, "up": 11, "yes": 12}
