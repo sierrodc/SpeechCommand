@@ -15,8 +15,8 @@ import librosa
 
 train_audio_path = 'C:/tmp/speech_dataset/'
 
-target_list = [ 'yes', 'no', 'on', 'off']
-skip_list = ['bed', 'eight', 'three', 'two', 'backward','up', 'down', 'stop', 'go', 'left', 'right', 'bird', 'cat', 'dog', 'five', 'four', 'seven', 'sheila', 'six', 'follow', 'visual', 'zero', 'marvin', 'nine', 'wow', 'happy', 'forward', 'learn', 'house']
+target_list = ['backward', 'yes', 'no', 'on', 'off']
+skip_list = ['tree', 'one', 'bed', 'eight', 'three', 'two','up', 'down', 'stop', 'go', 'left', 'right', 'bird', 'cat', 'dog', 'five', 'four', 'seven', 'sheila', 'six', 'follow', 'visual', 'zero', 'marvin', 'nine', 'wow', 'happy', 'forward', 'learn', 'house']
 
 folders = next(os.walk(train_audio_path))[1] # 0=se stesso, 1=subfolder primo livello ...
 folders = list(filter(lambda f: f not in skip_list, folders))
@@ -100,22 +100,35 @@ X_test = X_test.reshape(-1,8000,1)
 y_train = np.vectorize(y_value_map.get)(y_train)
 y_test = np.vectorize(y_value_map.get)(y_test)
 y_train = keras.utils.to_categorical(y_train, len(y_value_map))
-y_test = keras.utils.to_categorical(y_train, len(y_value_map))
+y_test = keras.utils.to_categorical(y_test, len(y_value_map))
 
 #Conv1D Model
 model = keras.models.Sequential([
-    keras.layers.Conv1D(filters=64, kernel_size=11, padding='valid', activation='relu', strides=1, input_shape=input_shape),
-    keras.layers.Conv1D(filters=64, kernel_size=7, padding='valid', activation='relu', strides=1, input_shape=input_shape),
-    keras.layers.Dropout(drop_out_rate),
+    keras.layers.Conv1D(filters=8, kernel_size=11, padding='valid', activation='relu', strides=1, input_shape=input_shape),
     keras.layers.MaxPooling1D(pool_size=2),
+    keras.layers.Dropout(drop_out_rate),
+    keras.layers.Conv1D(filters=16, kernel_size=7, padding='valid', activation='relu', strides=1),
+    keras.layers.MaxPooling1D(2),
+    keras.layers.Dropout(drop_out_rate),
+    keras.layers.Conv1D(filters=32, kernel_size=5, padding='valid', activation='relu', strides=1),
+    keras.layers.MaxPooling1D(2),
+    keras.layers.Dropout(drop_out_rate),
+    keras.layers.Conv1D(filters=64, kernel_size=5, padding='valid', activation='relu', strides=1),
+    keras.layers.MaxPooling1D(2),
+    keras.layers.Dropout(drop_out_rate),
+    keras.layers.Conv1D(filters=128, kernel_size=3, padding='valid', activation='relu', strides=1),
+    keras.layers.MaxPooling1D(2),
     keras.layers.Flatten(),
-    keras.layers.Dense(32, activation='relu'),
+    keras.layers.Dense(256, activation='relu'),
+    keras.layers.Dropout(drop_out_rate),
+    keras.layers.Dense(128, activation='relu'),
+    keras.layers.Dropout(drop_out_rate),
     keras.layers.Dense(len(y_value_map), activation='softmax')
 ])
 
 model.compile(loss='categorical_crossentropy',
              optimizer=tf.optimizers.Adam(learning_rate=0.01),
-             batch_size=512,
+             #batch_size=512,
              metrics=['accuracy'])
 model.summary()
 
