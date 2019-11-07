@@ -3,6 +3,20 @@
 # CNN  -->  https://www.jessicayung.com/explaining-tensorflow-code-for-a-convolutional-neural-network/
 #           https://www.pyimagesearch.com/2018/12/31/keras-conv2d-and-convolutional-layers/
 
+# ISTRUZIONI PER FARE TRAIN DEL MODELLO
+# 1) Installare python 3.7.x (tensorflow 2 non supporta ancora il 3.8)
+# 2) aprire il terminale ed eseguire i seguenti (spero siano tutti):
+#    - pip install numpy
+#    - pip install scikit-learn
+#    - pip install tensorflow (oppure tensorflow-gpu se hai una scheda video compatibile)
+#    - pip install librosa
+#    - pip install matplotlib
+# 3) scaricare il training set di google https://storage.googleapis.com/download.tensorflow.org/data/speech_commands_v0.02.tar.gz
+# 4) scompattarlo in C:/tmp/speech_dataset/
+# 5) eseguire Train.py
+#
+# -> se tutto va bene, verrà creato un file "saving/T2.tflite" contenente il modello trainato e "savinc/T2_mapping.json" per capire l'output
+
 import os
 import datetime
 
@@ -19,14 +33,13 @@ import librosa
 import librosa.display
 import json
 
-
+# path che contiene il set di file audio
 train_audio_path = 'C:/tmp/speech_dataset/'
 
-target_list = ['backward', 'yes', 'no', 'on', 'off']
-skip_list = ['tree', 'one', 'bed', 'eight', 'three', 'two','up', 'down', 'stop', 'go', 'left', 'right', 'bird', 'cat', 'dog', 'five', 'four', 'seven', 'sheila', 'six', 'follow', 'visual', 'zero', 'marvin', 'nine', 'wow', 'happy', 'forward', 'learn', 'house']
-
-#target_list = ['backward', 'yes', 'no', 'on', 'off','up', 'down', 'stop', 'go', 'right', 'forward','left']
-#skip_list = ['tree', 'one', 'bed', 'eight', 'three', 'two', 'bird', 'cat', 'dog', 'five', 'four', 'seven', 'sheila', 'six', 'follow', 'visual', 'zero', 'marvin', 'nine', 'wow', 'happy', 'learn', 'house']
+# quali parole voglio riconoscere
+target_list = ['backward', 'yes', 'no', 'on', 'off','up', 'down', 'stop', 'go', 'right', 'forward','left']
+# parole che non voglio processare
+skip_list = ['tree', 'one', 'bed', 'eight', 'three', 'two', 'bird', 'cat', 'dog', 'five', 'four', 'seven', 'sheila', 'six', 'follow', 'visual', 'zero', 'marvin', 'nine', 'wow', 'happy', 'learn', 'house']
 
 
 folders = next(os.walk(train_audio_path))[1] # 0=se stesso, 1=subfolder primo livello ...
@@ -40,12 +53,9 @@ print(f'target_list : {target_list}, unknowns: {unknown_list}, no_word: [\'_back
 x = [] # lista di wav dei comandi a cui siamo interessati (arrays of 8000 floats)
 y = [] # lista di label associati ai wav qui sopra: ['no', 'no', 'no', 'yes', 'yes', 'on' ....]
 
-# andiamo a leggere i files con resampling 8000Hz per velocizzare e diminuire l'uso della memoria
-
 #unknown_wav = [] # lista di wav a cui non siamo interessati
 y_value_map = {} # dizionario chiave-valore: { 'no': 1, 'yes': 2, 'up': 3 .... }
 background_noise = []
-
 
 idx = 0
 y_value_map['_unknown_'] = idx
@@ -56,62 +66,20 @@ for folder in folders: #ciclo tutte le sottocartelle (a cui sono interessato):
         idx += 1
         y_value_map[folder] = idx
 
+    # ciclo tutti i file .wav
     for wav_file in filter(lambda f: f.endswith('.wav'), os.listdir(os.path.join(train_audio_path, folder))):
-        wav_file_full_path = os.path.join(train_audio_path, folder,  wav_file)
-        wav_file_image_full_path = wav_file_full_path + '.png'
-        waf_file_spectogram_image_full_path = wav_file_full_path + '.spec.png'
-        waf_file_spectogram_full_path = wav_file_full_path + '.spec.npy'
-        waf_file_mfcc_image_full_path = wav_file_full_path + '.mfcc.png'
-        waf_file_mfcc_full_path = wav_file_full_path + '.mfcc.npy'
+        wav_file_full_path = os.path.join(train_audio_path, folder,  wav_file) # full path file wav
+        waf_file_spectogram_full_path = wav_file_full_path + '.spec.npy' # salvo un file lo spettrogramma come array numpy (facile rileggere)
 
+        # creo spettrogramma se non avevo già calcolato in precedenza, altrimenti lo carica da file
         if not os.path.exists(waf_file_spectogram_full_path):
             samples, sample_rate = librosa.load(wav_file_full_path, sr=16000) # load original file (original 16KHz)
-            spectogram = librosa.feature.melspectrogram(y=samples, sr=sample_rate)
-
-            mfccs = librosa.feature.mfcc(y=samples, sr=sample_rate, n_mfcc=40)
-            #mfccsscaled = np.mean(mfccs.T,axis=0)
-
-            # WAVEP
-            # save waveplot as a file
-            # fig = plt.figure(figsize=[2, 1])
-            # ax = fig.add_subplot(111)
-            # ax.axes.get_xaxis().set_visible(False)
-            # ax.axes.get_yaxis().set_visible(False)
-            # ax.set_frame_on(False)
-            # librosa.display.waveplot(samples, sr=sample_rate)
-            # plt.savefig(wav_file_image_full_path, dpi=400, bbox_inches='tight', pad_inches=0)
-            # plt.close('all')
-            #SPECTOGRAM
-            # save raw spectogram
-            np.save(waf_file_spectogram_full_path, spectogram)
-            # save spectogram as a file
-            # fig = plt.figure(figsize=[2, 1])
-            # ax = fig.add_subplot(111)
-            # ax.axes.get_xaxis().set_visible(False)
-            # ax.axes.get_yaxis().set_visible(False)
-            # ax.set_frame_on(False)
-            # librosa.display.specshow(librosa.power_to_db(spectogram, ref=np.max))
-            # plt.savefig(waf_file_spectogram_image_full_path, dpi=400, bbox_inches='tight', pad_inches=0)
-            # plt.close('all')
-            
-            #MFCC
-            # save raw spectogram
-            np.save(waf_file_mfcc_full_path, mfccs)
-            # save spectogram as a file
-            # fig = plt.figure(figsize=[2, 1])
-            # ax = fig.add_subplot(111)
-            # ax.axes.get_xaxis().set_visible(False)
-            # ax.axes.get_yaxis().set_visible(False)
-            # ax.set_frame_on(False)
-            # librosa.display.specshow(mfccs, sr=sample_rate)
-            # plt.savefig(waf_file_mfcc_image_full_path, dpi=400, bbox_inches='tight', pad_inches=0)
-            # plt.close('all')
-            
+            spectogram = librosa.feature.melspectrogram(y=samples, sr=sample_rate) # calcola spettrogramma a bin
+            np.save(waf_file_spectogram_full_path, spectogram)            
         else: 
             spectogram = np.load(waf_file_spectogram_full_path)
 
-
-        if (50 > spectogram.shape[1]): # pad to have same width
+        if (50 > spectogram.shape[1]): # padding con zero
             pad_width = 50 - spectogram.shape[1]
             spectogram = np.pad(spectogram, pad_width=((0, 0), (0, pad_width)), mode='constant')
         
@@ -119,7 +87,7 @@ for folder in folders: #ciclo tutte le sottocartelle (a cui sono interessato):
             continue
 
         if folder == '_background_noise_':
-                background_noise.append(spectogram)
+                background_noise.append(spectogram) # not used now
         elif folder in unknown_list:
                 #unknown_wav.append(sample_8Hz)
                 y.append('_unknown_')
@@ -142,17 +110,6 @@ X_test = np.reshape(X_test, (-1, input_shape[0], input_shape[1], 1))
 
 input_shape = X_train[0].shape # 128, 50, 1
 
-# Parameters
-class LearningRateReducerCb(tf.keras.callbacks.Callback):
-  def on_epoch_end(self, epoch, logs={}):
-    old_lr = self.model.optimizer.lr.read_value()
-    new_lr = old_lr * 0.99
-    print(f"\nEpoch: {epoch}. Reducing Learning Rate from {old_lr} to {new_lr}")
-    self.model.optimizer.lr.assign(new_lr)
-
-drop_out_rate = 0.25
-
-
 #Make Label data 'class num' -> 'One hot vector' 1 -> [1,0,0,0,0,0], 2 -> [0,1,0,0,0,0,0]...
 y_train = np.vectorize(y_value_map.get)(y_train)
 y_test = np.vectorize(y_value_map.get)(y_test)
@@ -162,8 +119,8 @@ y_test = keras.utils.to_categorical(y_test, len(y_value_map))
 #Conv1D Model
 model = keras.models.Sequential([
     keras.layers.Conv2D(
-        filters=32,
-        kernel_size=(3,3), #size of filter
+        filters=32, # numero filtri
+        kernel_size=(3,3), # dimensione filtro/kernel
         strides=(1, 1),
         padding='same', #add padding
         activation='relu',
@@ -174,13 +131,13 @@ model = keras.models.Sequential([
     keras.layers.MaxPool2D(pool_size=(2,2),strides=2,padding='valid'),
     keras.layers.Conv2D(filters=128,kernel_size=(3,3),padding='same',activation='relu'),
     keras.layers.MaxPool2D(pool_size=(2,2),strides=2,padding='valid'),
-    keras.layers.Dropout(drop_out_rate),
-    keras.layers.Flatten(),
+    keras.layers.Dropout(0.25),
+    keras.layers.Flatten(), # da immagine 2D ad array
     keras.layers.Dense(
         units=64,
         activation='relu'
     ),
-    keras.layers.Dropout(drop_out_rate),
+    keras.layers.Dropout(0.25),
     keras.layers.Dense(
         units = y_train.shape[1],
         activation='softmax'
@@ -189,20 +146,21 @@ model = keras.models.Sequential([
 
 model.compile(loss='categorical_crossentropy',
              optimizer=tf.optimizers.Adam(learning_rate=0.01),
-             #batch_size=512,
              metrics=['accuracy'])
 model.summary()
 
-model.fit(X_train, y_train, callbacks=[LearningRateReducerCb()], epochs=10)
+model.fit(X_train, y_train, epochs=10) #effettua il training (ha senso aumentare le epoche)
 loss, accuracy = model.evaluate(X_test, y_test)
-print(f"Loss: {loss}, accuracy: {accuracy}")
+print(f"Loss: {loss}, accuracy: {accuracy}") # stampa performance su validation set
 
+
+# salva il modello
 tf.saved_model.save(model, "./saving/T2_savedModel/") 
 
-# convert SavedModel to tensorflow lite model
+# converte SavedModel a tensorflow lite
 converter = tf.lite.TFLiteConverter.from_saved_model("./saving/T2_savedModel/")
 with open("./saving/T2.tflite", "wb") as tffile:
     tffile.write(converter.convert())
 
-# save mapping to understand output
+# salva mapping per capire a runtime l'output
 json.dump( y_value_map, open( "./saving/T2_mapping.json", 'w' ) )
